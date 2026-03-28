@@ -1,10 +1,10 @@
 import streamlit as st
 import gspread
 import pandas as pd
-import json
+import os
 
 # ==========================================
-# 🎨 1. Configuración de la Página Web
+# 🎨 1. Configuración Visual de la Página
 # ==========================================
 st.set_page_config(
     page_title="Monitor Dólar Banxico", 
@@ -13,37 +13,35 @@ st.set_page_config(
 )
 
 st.title("📊 Monitor del Dólar Oficial (FIX)")
-st.write("Esta página web lee automáticamente los datos históricos guardados en Google Sheets por nuestro robot diario.")
+st.write("Esta aplicación web lee los datos históricos guardados en Google Sheets por nuestro robot diario.")
 
-# Reemplaza esto con el ID real de tu Google Sheet (está en la URL de tu navegador)
-ID_HOJA_CALCULO = "TU_ID_DE_HOJA_AQUÍ"
+# ⚠️ REEMPLAZA ESTO CON EL ID REAL DE TU GOOGLE SHEET ⚠️
+ID_HOJA_CALCULO = "1yk2bkHnJazeuZYBHfglfFQQho4Dd3oWz-qNwCm1ErUg"
 
 # ==========================================
-# 🔐 2. Conexión Inteligente (Nube o Local)
+# 🔐 2. Conexión Inteligente (Nube vs PC Local)
 # ==========================================
 try:
-    # ☁️ Camino 1: Si estamos en la nube de Streamlit Cloud usando Secrets
+    # ☁️ Camino A: Si estamos en la nube de Streamlit Cloud (leyendo los secretos que guardamos)
     if "gcp_service_account" in st.secrets:
         cliente = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
     
-    # 💻 Camino 2: Si estás corriendo el archivo en tu PC local (Visual Studio Code)
+    # 💻 Camino B: Si estás corriendo el archivo en Visual Studio Code local
     else:
         cliente = gspread.service_account(filename="credenciales.json")
 
-    # Abrir la hoja
+    # Abrir la hoja por ID
     hoja = cliente.open_by_key(ID_HOJA_CALCULO).worksheet("Hoja 1")
     
     # ==========================================
-    # 📈 3. Lectura y Graficación de Valores Pasados
+    # 📈 3. Lectura de Datos Históricos
     # ==========================================
-    # 📥 Traer TODOS los registros pasados de la hoja
-    datos = hoja.get_all_records()
+    datos = hoja.get_all_records() # Jala todas las filas pasadas de la tabla
 
     if datos:
-        # Convertimos los datos a un DataFrame de Pandas (ideal para gráficas)
         df = pd.DataFrame(datos)
         
-        # Limpieza de datos (por si acaso)
+        # Limpieza estándar de datos para la gráfica
         df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True)
         df['Precio'] = pd.to_numeric(df['Precio'])
 
@@ -55,39 +53,38 @@ try:
         col1, col2, col3 = st.columns(3)
         
         col1.metric(
-            label="💵 Precio Actual (FIX)", 
+            label="💵 Precio Más Reciente", 
             value=f"${ultimo_precio:.4f} MXN", 
             delta=f"{variacion:.4f} MXN"
         )
         
         col2.metric(
-            label="📈 Máximo Histórico", 
+            label="📈 Máximo del Mes", 
             value=f"${df['Precio'].max():.4f} MXN"
         )
         
         col3.metric(
-            label="📉 Mínimo Histórico", 
+            label="📉 Mínimo del Mes", 
             value=f"${df['Precio'].min():.4f} MXN"
         )
 
         st.divider()
 
         # --- SECCIÓN DE GRÁFICA ---
-        st.subheader("📉 Tendencia Visual de Valores Pasados")
-        # Graficamos poniendo la Fecha en el eje X y el Precio en el eje Y
+        st.subheader("📉 Tendencia Visual de los Valores Pasados")
+        # Grafica la línea temporal
         st.line_chart(df.set_index('Fecha')['Precio'])
 
         st.divider()
 
         # --- SECCIÓN DE TABLA DESPLEGABLE ---
-        with st.expander("📂 Ver la base de datos completa"):
-            # Ordenamos del más nuevo al más viejo para que sea más fácil de leer
+        with st.expander("📂 Ver base de datos completa"):
             df_ordenado = df.sort_values(by='Fecha', ascending=False)
             st.dataframe(df_ordenado, use_container_width=True)
 
     else:
-        st.warning("⚠️ La hoja de cálculo está conectada pero parece estar vacía.")
+        st.warning("⚠️ La conexión fue exitosa, pero parece que la hoja de cálculo está vacía.")
 
 except Exception as e:
-    st.error(f"❌ Error de Conexión: No se pudo conectar a Google Sheets. Detalle: {e}")
-    st.info("Revisa si copiaste correctamente tus credenciales en los secretos de Streamlit o si el ID de la hoja es correcto.")
+    st.error(f"❌ Error de Conexión: {e}")
+    st.info("💡 Tip: Verifica que pusiste el ID correcto de tu Google Sheet en el código y que guardaste correctamente el secreto en Streamlit Cloud.")
