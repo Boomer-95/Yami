@@ -22,7 +22,9 @@ try:
     todos_los_datos = hoja.get_all_values()
     ultima_fila = todos_los_datos[-1] # Toma la última fila que escribió el robot
     fecha_actual = ultima_fila[0]
-    precio_dolar = float(ultima_fila[1])
+    # ✅ Código nuevo (limpia la coma automáticamente):
+    precio_texto = str(ultima_fila[1]).replace(',', '.')
+    precio_dolar = float(precio_texto)
 
     # 4. Interfaz de la Calculadora
     st.info(f"📅 Valor actualizado al: **{fecha_actual}**")
