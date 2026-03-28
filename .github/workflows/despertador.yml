@@ -24,4 +24,7 @@ jobs:
         pip install requests gspread
 
     - name: 🤖 Correr el Robot
+      env:
+        # Aquí le prestamos la llave secreta a la computadora de GitHub
+        GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
       run: python robot_dolar.py
