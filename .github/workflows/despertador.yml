@@ -23,7 +23,6 @@ jobs:
 
     - name: Correr el Robot
       env:
-        # Pasamos AMBOS secrets a la computadora de GitHub
         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-        BANXICO_TOKEN: ${{ secrets.TOKEN }} # <--- AGREGAMOS ESTE
+        BANXICO_TOKEN: ${{ secrets.TOKEN }}
       run: python robot_dolar.py
