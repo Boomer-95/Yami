@@ -2,33 +2,28 @@ name: Robot Dolar Diario
 
 on:
   schedule:
-    # Corre todos los días a las 14:00 UTC (8:00 AM hora CDMX)
-    - cron: '0 14 * * *'
-  workflow_dispatch: # Nos deja correrlo a mano
-
+    # Corre cada hora desde las 15:00 hasta las 18:00 UTC 
+    # (9:00 AM a 12:00 PM hora CDMX) de lunes a viernes
+    - cron: '0 15,16,17,18 * * 1-5'
+  workflow_dispatch:
 jobs:
   actualizar-dolar:
     runs-on: ubuntu-latest
-    
-    # 🛡️ AQUÍ AGREGAMOS LOS PERMISOS
     permissions:
       contents: write
-      id-token: write
 
     steps:
-    - name: 📥 Clonar el repositorio
-      uses: actions/checkout@v4
-
-    - name: 🐍 Configurar Python
-      uses: actions/setup-python@v5
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.x'
 
-    - name: 📦 Instalar librerías necesarias
-      run: |
-        pip install requests gspread
+    - name: Instalar librerías
+      run: pip install requests gspread
 
-    - name: 🤖 Correr el Robot
+    - name: Correr el Robot
       env:
+        # Pasamos AMBOS secrets a la computadora de GitHub
         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        BANXICO_TOKEN: ${{ secrets.TOKEN }} # <--- AGREGAMOS ESTE
       run: python robot_dolar.py
